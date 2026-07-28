@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.molishaai97art.craftableinfiniteshulkerbox.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "craftable_infinite_shulker_box.refmap.json",
+  "mixins": [
+    "ShulkerBoxBlockEntityMixin",
+    "ShulkerBoxSlotMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
