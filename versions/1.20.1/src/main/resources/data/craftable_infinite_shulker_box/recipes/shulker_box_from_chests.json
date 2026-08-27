@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "CCC",
+    "CCC",
+    "CCC"
+  ],
+  "key": {
+    "C": {
+      "item": "minecraft:chest"
+    }
+  },
+  "result": {
+    "item": "minecraft:shulker_box",
+    "count": 1
+  },
+  "show_notification": true
+}

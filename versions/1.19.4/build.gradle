@@ -1,0 +1,2 @@
+// All build logic is shared; version-specific values live in gradle.properties.
+apply from: rootProject.file('gradle/forge-mod.gradle')

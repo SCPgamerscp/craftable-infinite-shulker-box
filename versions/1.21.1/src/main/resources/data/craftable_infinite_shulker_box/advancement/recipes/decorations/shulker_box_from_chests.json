@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_chest": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:chest"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_chest"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "craftable_infinite_shulker_box:shulker_box_from_chests"
+    ]
+  }
+}

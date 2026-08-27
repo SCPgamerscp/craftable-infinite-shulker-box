@@ -1,6 +1,6 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "decorations",
+  "category": "misc",
   "pattern": [
     "CCC",
     "CCC",
@@ -12,8 +12,8 @@
     }
   },
   "result": {
-    "item": "minecraft:shulker_box",
-    "count": 1
+    "count": 1,
+    "id": "minecraft:shulker_box"
   },
   "show_notification": true
 }

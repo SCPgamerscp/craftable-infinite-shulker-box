@@ -1,97 +1,37 @@
+// Root project of a multi-version Forge mod.
+//
+// The root project resolves the plugin versions but does not apply them
+// (`apply false`): every ForgeGradle setup lives in `versions/<mc_version>` so
+// that each Minecraft version gets its own mappings, toolchain and Mixin
+// version. Declaring the plugins here puts them on the build script classpath,
+// which lets the subprojects apply them by id without repeating the version.
+//
+// Useful tasks:
+//   ./gradlew build                        - build every supported version
+//   ./gradlew :versions:1.20.1:build       - build a single version
+//   ./gradlew collectJars                  - copy every JAR into build/libs
+
 plugins {
-    id 'eclipse'
-    id 'idea'
-    id 'maven-publish'
-    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
-    id 'org.spongepowered.mixin' version '0.7-SNAPSHOT'
+    id 'net.minecraftforge.gradle' version '[6.0,6.2)' apply false
+    id 'org.spongepowered.mixin' version '0.7-SNAPSHOT' apply false
 }
 
-version = mod_version
-group = mod_group_id
+// `versions` itself is only a container for the per-version projects and has no
+// build logic, so select the leaf projects that actually produce a JAR.
+def versionProjects = subprojects.findAll { it.parent?.name == 'versions' }
 
-base {
-    archivesName = mod_id
-}
+tasks.register('collectJars', Copy) {
+    group = 'build'
+    description = 'Copies the JAR of every supported Minecraft version into build/libs.'
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
-
-minecraft {
-    mappings channel: mapping_channel, version: mapping_version
-    copyIdeResources = true
-
-    runs {
-        configureEach {
-            workingDirectory project.file('run')
-            property 'forge.logging.console.level', 'info'
-
-            mods {
-                "${mod_id}" {
-                    source sourceSets.main
-                }
-            }
-        }
-
-        client {}
-
-        server {
-            args '--nogui'
-        }
+    versionProjects.each { versionProject ->
+        dependsOn "${versionProject.path}:build"
     }
-}
 
-mixin {
-    add sourceSets.main, "${mod_id}.refmap.json"
-    config "${mod_id}.mixins.json"
-}
-
-repositories {
-    maven {
-        name = 'SpongePowered'
-        url = 'https://repo.spongepowered.org/repository/maven-public/'
+    from(versionProjects.collect { it.layout.buildDirectory.dir('libs') }) {
+        include '*.jar'
+        exclude '*-sources.jar'
     }
-}
-
-dependencies {
-    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
-    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
-}
-
-tasks.named('processResources', ProcessResources).configure {
-    def replaceProperties = [
-        minecraft_version: minecraft_version,
-        minecraft_version_range: minecraft_version_range,
-        forge_version: forge_version,
-        forge_version_range: forge_version_range,
-        loader_version_range: loader_version_range,
-        mod_id: mod_id,
-        mod_name: mod_name,
-        mod_license: mod_license,
-        mod_version: mod_version,
-        mod_authors: mod_authors,
-        mod_description: mod_description
-    ]
-    inputs.properties replaceProperties
-
-    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
-        expand replaceProperties
-    }
-}
-
-tasks.named('jar', Jar).configure {
-    manifest {
-        attributes([
-            'Specification-Title': mod_id,
-            'Specification-Vendor': mod_authors,
-            'Specification-Version': '1',
-            'Implementation-Title': mod_name,
-            'Implementation-Version': archiveVersion,
-            'Implementation-Vendor': mod_authors,
-            'MixinConfigs': "${mod_id}.mixins.json"
-        ])
-    }
-    finalizedBy 'reobfJar'
-}
-
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
+    into layout.buildDirectory.dir('libs')
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
