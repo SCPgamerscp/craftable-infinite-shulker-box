@@ -1,0 +1,133 @@
+// Shared ForgeGradle build logic for every supported Minecraft version.
+//
+// Each `versions/<mc_version>` subproject sets its own properties in
+// gradle.properties (Minecraft/Forge versions, Java toolchain, Mixin version,
+// pack format, ...) and then applies this file. Everything that is identical
+// across versions is defined here exactly once.
+
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'org.spongepowered.mixin'
+
+version = "${mod_version}+mc${minecraft_version}"
+group = mod_group_id
+
+base {
+    // Include the Minecraft version so JARs of different versions never collide.
+    archivesName = "${mod_id}-mc${minecraft_version}"
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(java_version as int)
+
+// The Java sources and the Mixin config are shared by all versions; only the
+// data-pack resources under this subproject differ per Minecraft version.
+def commonDir = rootProject.layout.projectDirectory.dir('common/src/main')
+
+sourceSets.main {
+    java.srcDir commonDir.dir('java')
+    resources.srcDir commonDir.dir('resources')
+}
+
+minecraft {
+    mappings channel: mapping_channel, version: mapping_version
+    copyIdeResources = true
+
+    // 1.20.5+ ships official mappings at runtime, so ForgeGradle must not
+    // reobfuscate into Searge names for those versions.
+    if (!Boolean.parseBoolean(needs_reobf)) {
+        reobf = false
+    }
+
+    runs {
+        configureEach {
+            workingDirectory project.file('run')
+            property 'forge.logging.console.level', 'info'
+
+            mods {
+                "${mod_id}" {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        client {}
+
+        server {
+            args '--nogui'
+        }
+    }
+}
+
+// A refmap remaps Mixin targets from the names used at compile time to the
+// names used at runtime. Pre-1.20.5 the runtime uses Searge names, so the
+// refmap is required. From 1.20.5 on the runtime uses the same official
+// mappings we compile against, so no refmap is needed (and shipping the Searge
+// one would point Mixin at names that do not exist at runtime).
+def usesRefmap = Boolean.parseBoolean(needs_reobf)
+
+mixin {
+    if (usesRefmap) {
+        add sourceSets.main, "${mod_id}.refmap.json"
+    }
+    config "${mod_id}.mixins.json"
+}
+
+repositories {
+    maven {
+        name = 'SpongePowered'
+        url = 'https://repo.spongepowered.org/repository/maven-public/'
+    }
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    annotationProcessor "org.spongepowered:mixin:${mixin_version}:processor"
+}
+
+tasks.named('processResources', ProcessResources).configure {
+    def replaceProperties = [
+        minecraft_version: minecraft_version,
+        minecraft_version_range: minecraft_version_range,
+        forge_version: forge_version,
+        forge_version_range: forge_version_range,
+        loader_version_range: loader_version_range,
+        mod_id: mod_id,
+        mod_name: mod_name,
+        mod_license: mod_license,
+        mod_version: mod_version,
+        mod_authors: mod_authors,
+        mod_description: mod_description,
+        pack_format: pack_format,
+        mixin_compatibility_level: mixin_compatibility_level,
+        // Emitted as a whole JSON line so it can be omitted entirely.
+        refmap_entry: usesRefmap ? "  \"refmap\": \"${mod_id}.refmap.json\",\n".toString() : ''
+    ]
+    inputs.properties replaceProperties
+
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta', "${mod_id}.mixins.json".toString()]) {
+        expand replaceProperties
+    }
+}
+
+tasks.named('jar', Jar).configure {
+    manifest {
+        attributes([
+            'Specification-Title': mod_id,
+            'Specification-Vendor': mod_authors,
+            'Specification-Version': '1',
+            'Implementation-Title': mod_name,
+            'Implementation-Version': archiveVersion,
+            'Implementation-Vendor': mod_authors,
+            'MixinConfigs': "${mod_id}.mixins.json"
+        ])
+    }
+
+    if (Boolean.parseBoolean(needs_reobf)) {
+        finalizedBy 'reobfJar'
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}

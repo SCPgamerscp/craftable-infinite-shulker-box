@@ -17,3 +17,12 @@ plugins {
 }
 
 rootProject.name = 'craftable_infinite_shulker_box'
+
+// One subproject per supported Minecraft version. Each one is an independent
+// ForgeGradle build that produces its own JAR; they all compile the same shared
+// sources from `common/` plus their own version-specific data-pack resources.
+include 'versions:1.18.2'
+include 'versions:1.19.2'
+include 'versions:1.19.4'
+include 'versions:1.20.1'
+include 'versions:1.21.1'
