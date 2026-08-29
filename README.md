@@ -119,6 +119,10 @@ Repeat for each version you intend to ship:
 4. Create at least three nesting levels, then place, break, and reopen each box to verify contents persist.
 5. Use a hopper to insert a shulker box into a placed shulker box.
 
-## License
+## 利用規約・ライセンス
 
-MIT
+本Modに特定のオープンソースライセンス（MIT等）は設定しておりません。
+
+- **ゲームプレイ・動画・配信等での利用**: 自由にご利用いただけます。
+- **改変・二次配布・Modpack同梱・コード流用**: **必ず事前に一言お声がけ・ご連絡（GitHub Issue等）をいただければ改変・利用可能です。**
+- **禁止事項**: 無断での改変・無断再配布・転載・自作発言・販売は禁止いたします。
